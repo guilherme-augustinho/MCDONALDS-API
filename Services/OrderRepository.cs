@@ -7,13 +7,24 @@ using Microsoft.EntityFrameworkCore;
 namespace McDonaldsAPI.Services;
 
 using MCDONALDS_API.Model;
-
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 public class OrderRepository : IOrderRepository
 {
     private readonly McDataBaseContext ctx;
     public OrderRepository(McDataBaseContext ctx)
         => this.ctx = ctx;
+
+        private async Task<ClientOrder> getOrder(int orderId)
+    {
+        var orders =
+            from order in ctx.ClientOrders
+            where order.Id == orderId
+            select order;
+        
+        return await orders.FirstOrDefaultAsync();
+    }
 
     public async Task<int> CreateOrder(int storeId)
     {
@@ -43,17 +54,6 @@ public class OrderRepository : IOrderRepository
         ctx.Remove(currentOrder);
         await ctx.SaveChangesAsync();
     }
-
-    public Task<List<Product>> GetMenu(int orderId)
-    {
-
-    }
-
-    public Task<List<Product>> GetOrderItems(int orderId)
-    {
-
-    }
-
     public async Task AddItem(int orderId, int productId)
     {
         var order = await getOrder(orderId);
@@ -76,31 +76,54 @@ public class OrderRepository : IOrderRepository
         ctx.Add(item);
         await ctx.SaveChangesAsync();
     }
+   
+    public Task<List<Product>> GetMenu(int orderId)
+    {
+        throw new NotImplementedException();
+    }
+
+    public async Task<List<Product>> GetOrderItems(int orderId)
+    {
+        var order = await getOrder(orderId);
+        if (order is null)
+            throw new Exception("Order do not exist.");
+
+        var products =
+            from item in ctx.ClientOrderItems
+            join product in ctx.Products
+            on item.ProductId equals product.Id
+            where item.ClientOrderId == orderId
+            select product;
+
+         var selectedProduct = await products
+            .FirstOrDefaultAsync();
+
+        if (selectedProduct is null)
+            throw new Exception("Product do not exist.");
+
+        ctx.Add(selectedProduct);
+        await ctx.SaveChangesAsync();
+
+
+
+    }
 
     public Task RemoveItem(int orderId, int productId)
     {
-
+        throw new NotImplementedException();
     }
 
     public Task FinishOrder(int orderId)
     {
-
+        throw new NotImplementedException();
     }
 
     public Task DeliveryOrder(int orderId)
     {
-
-    }
-
-    private async Task<ClientOrder> getOrder(int orderId)
-    {
-        var orders =
-            from order in ctx.ClientOrders
-            where order.Id == orderId
-            select order;
+        throw new NotImplementedException();
         
-        return await orders.FirstOrDefaultAsync();
     }
+
 
     Task<List<Product>> IOrderRepository.GetMenu(int orderId)
     {
